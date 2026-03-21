@@ -1,54 +1,176 @@
 # OpenClaw Skill Explorer + Risk Scanner
 
-Monorepo scaffold for the MVP web application.
+OpenClaw Skill Explorer + Risk Scanner is a full-stack demo app built with:
 
-## Structure
+- FastAPI + SQLAlchemy + SQLite (`apps/api`)
+- Next.js + TypeScript (`apps/web`)
 
-- `apps/web`: Next.js frontend (TypeScript + Tailwind)
-- `apps/api`: FastAPI backend (Python 3.11+)
-- `packages/shared`: Shared package placeholder for future cross-app assets
-- `scripts`: Local setup and utility scripts
-- `docs`: Project documents
+This repository is ready for:
+
+- local development
+- production-style local runs with Docker Compose
+- future deployment to Vercel (web) + Render/Railway/Fly.io (api)
+
+## Project Structure
+
+- `apps/api`: FastAPI backend
+- `apps/web`: Next.js frontend
+- `scripts`: helper scripts for local developer workflows
+- `docs`: product and task documents
+- `docker-compose.yml`: local full-stack container orchestration
 
 ## Prerequisites
 
+- Python 3.11+
 - Node.js 20+
 - npm 10+
-- Python 3.11+
+- Docker Desktop (for Docker workflow)
 
-## Environment Setup
+## Environment Variables
 
-1. Copy root env template:
-   - `cp .env.example .env` (or create manually)
-2. Backend env:
-   - `cp apps/api/.env.example apps/api/.env`
-3. Frontend env:
-   - `cp apps/web/.env.local.example apps/web/.env.local`
+Copy these templates before running:
 
-## Backend Setup (FastAPI)
+```bash
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.local.example apps/web/.env.local
+```
 
-1. `cd apps/api`
-2. `python -m venv .venv`
-3. Activate venv:
-   - Windows PowerShell: `.\.venv\Scripts\Activate.ps1`
-   - macOS/Linux: `source .venv/bin/activate`
-4. `pip install -r requirements.txt`
-5. Optional SQLite init placeholder:
-   - `python ..\..\scripts\init_db.py`
-6. Run API server:
-   - `uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`
+On Windows PowerShell, use:
 
-Health check:
-- `GET http://localhost:8000/health` -> `{ "status": "ok" }`
+```powershell
+Copy-Item .env.example .env
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.local.example apps/web/.env.local
+```
 
-## Frontend Setup (Next.js)
+### Root `.env.example`
 
-1. `cd apps/web`
-2. `npm install`
-3. `npm run dev`
-4. Open `http://localhost:3000`
+Used mainly by Docker Compose defaults and shared local config examples.
 
-## Notes
+### Backend `apps/api/.env.example`
 
-- This round includes initialization only.
-- Business logic, sync pipelines, risk engine logic, and full product pages are intentionally deferred.
+Required/important:
+
+- `APP_NAME`
+- `APP_ENV`
+- `APP_HOST`
+- `APP_PORT`
+- `DATABASE_URL`
+- `CORS_ALLOW_ORIGINS`
+
+Optional:
+
+- `GITHUB_TOKEN`
+- `OPENAI_API_KEY`
+- `OPENAI_BASE_URL`
+- `OPENAI_MODEL`
+- `OPENAI_FALLBACK_MODEL`
+- `OPENAI_TIMEOUT_SECONDS`
+
+### Frontend `apps/web/.env.local.example`
+
+Required:
+
+- `NEXT_PUBLIC_API_BASE_URL` (for example: `http://localhost:8000`)
+
+## Local Development
+
+### 1) Backend
+
+```bash
+cd apps/api
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Windows PowerShell activate:
+
+```powershell
+cd apps/api
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Initialize database:
+
+```bash
+cd apps/api
+python -m app.db.init_db
+```
+
+Run backend:
+
+```bash
+cd apps/api
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Or use helper script:
+
+```bash
+./scripts/run_api.sh
+```
+
+### 2) Seed / Sync Skill Data
+
+```bash
+python scripts/sync_sources.py
+```
+
+### 3) Frontend
+
+```bash
+cd apps/web
+npm install
+npm run dev
+```
+
+Or use helper script:
+
+```bash
+./scripts/run_web.sh
+```
+
+### 4) Local URLs
+
+- Frontend: `http://localhost:3000`
+- API docs: `http://localhost:8000/docs`
+- Health: `http://localhost:8000/health`
+- Readiness: `http://localhost:8000/ready`
+
+## Docker Development
+
+From repository root:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- Web: `http://localhost:3000`
+- API: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
+
+Stop containers:
+
+```bash
+docker compose down
+```
+
+Stop and remove volumes (reset SQLite data):
+
+```bash
+docker compose down -v
+```
+
+## Production-Style Notes
+
+- Frontend can be deployed to Vercel.
+- Backend can be deployed to Render, Railway, or Fly.io.
+- Keep `NEXT_PUBLIC_API_BASE_URL` pointed to deployed backend URL.
+- Keep `CORS_ALLOW_ORIGINS` aligned with deployed frontend origins.
+- SQLite is acceptable for demos and small local setups, but not ideal for high scale or heavy concurrency.

@@ -71,6 +71,9 @@ export type SimilarSkillsResponse = {
 };
 
 function buildUrl(path: string, params?: Record<string, string | number | undefined>) {
+  if (!appConfig.apiBaseUrl) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.");
+  }
   const url = new URL(path, appConfig.apiBaseUrl);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
