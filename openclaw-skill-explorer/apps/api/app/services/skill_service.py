@@ -56,7 +56,11 @@ def ensure_skill_readme_summary(db: Session, skill: Skill) -> str | None:
 
     source_text = (skill.raw_readme or "").strip()
     if not source_text:
-        return None
+        fallback = (skill.description or "").strip() or (skill.normalized_text or "").strip()
+        if fallback:
+            source_text = fallback
+        else:
+            return None
 
     summary = summarize_readme(source_text)
     if not summary:
