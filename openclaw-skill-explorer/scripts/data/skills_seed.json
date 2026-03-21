@@ -1,0 +1,33 @@
+[
+  {
+    "name": "OpenClaw Productivity Booster",
+    "repo_url": "https://github.com/openclaw-labs/productivity-booster-skill",
+    "category": "productivity",
+    "description": "Automates repetitive planning and note-taking workflows."
+  },
+  {
+    "name": "OpenClaw DevOps Watcher",
+    "repo_url": "https://github.com/openclaw-community/devops-watcher",
+    "category": "devops",
+    "description": "Monitors deployment signals and summarizes infra events."
+  },
+  {
+    "name": "OpenClaw Documentation Assistant",
+    "repo_url": "https://github.com/example-org/openclaw-doc-assistant",
+    "category": "documentation",
+    "description": "Helps generate and maintain technical documentation."
+  },
+  {
+    "name": "OpenClaw Customer Support Triage",
+    "repo_url": "https://github.com/support-lab/openclaw-support-triage",
+    "category": "support",
+    "description": "Prioritizes support tickets and drafts response context."
+  },
+  {
+    "name": "OpenClaw Data Sync Helper",
+    "repo_url": "https://github.com/dataworks/openclaw-data-sync-helper",
+    "category": "data",
+    "description": "Coordinates structured data import and validation tasks."
+  }
+]
+
