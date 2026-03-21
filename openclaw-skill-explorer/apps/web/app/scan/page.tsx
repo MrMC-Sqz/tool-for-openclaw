@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import RiskCard from "../../components/RiskCard";
 import { scanText, type RiskReport } from "../../lib/api";
@@ -11,10 +11,13 @@ export default function ManualScanPage() {
   const [result, setResult] = useState<RiskReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const resultRef = useRef<HTMLElement | null>(null);
+
+  const isScanDisabled = isLoading || !text.trim();
 
   const handleScan = async () => {
     if (!text.trim()) {
-      setError("Please provide text to scan.");
+      setError("Please provide README or manifest text before scanning.");
       return;
     }
     setError(null);
@@ -22,8 +25,11 @@ export default function ManualScanPage() {
     try {
       const data = await scanText(text, inputType);
       setResult(data);
-    } catch (scanError) {
-      setError("Failed to run scan.");
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    } catch (_scanError) {
+      setError("Unable to run scan right now. Please check your connection and retry.");
     } finally {
       setIsLoading(false);
     }
@@ -31,45 +37,88 @@ export default function ManualScanPage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-8">
-      <h1 className="text-2xl font-bold text-slate-900">Manual Scan</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Paste README or manifest text to run a deterministic risk scan.
+      <h1 className="text-3xl font-bold tracking-tight text-slate-900">Manual Scan</h1>
+      <p className="mt-2 text-sm text-slate-600">
+        Paste README or manifest content to run a deterministic risk scan and get actionable
+        recommendations.
       </p>
 
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5">
-        <label className="block text-sm font-medium text-slate-700">Input Type</label>
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <label htmlFor="scan-input-type" className="block text-sm font-medium text-slate-700">
+          Input Type
+        </label>
         <select
+          id="scan-input-type"
           value={inputType}
           onChange={(event) => setInputType(event.target.value as "readme" | "manifest")}
           className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+          aria-label="Select scan input type"
         >
           <option value="readme">README</option>
           <option value="manifest">Manifest</option>
         </select>
 
-        <label className="mt-4 block text-sm font-medium text-slate-700">Text</label>
+        <label htmlFor="scan-text" className="mt-4 block text-sm font-medium text-slate-700">
+          Text
+        </label>
         <textarea
+          id="scan-text"
           value={text}
           onChange={(event) => setText(event.target.value)}
           rows={12}
           className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none ring-slate-300 focus:ring-2"
           placeholder="Paste README or manifest content..."
+          aria-label="Scan input text"
         />
 
-        <button
-          type="button"
-          onClick={handleScan}
-          disabled={isLoading}
-          className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isLoading ? "Scanning..." : "Scan"}
-        </button>
-        {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleScan}
+            disabled={isScanDisabled}
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="Run manual risk scan"
+          >
+            {isLoading ? "Scanning..." : "Scan"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setText("");
+              setResult(null);
+              setError(null);
+            }}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            aria-label="Clear scan form"
+          >
+            Clear
+          </button>
+        </div>
+
+        {error ? (
+          <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={handleScan}
+              disabled={isScanDisabled}
+              className="mt-2 rounded-md border border-rose-300 px-3 py-1 font-medium text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="Retry scan"
+            >
+              Retry
+            </button>
+          </div>
+        ) : null}
       </section>
 
-      <section className="mt-6">
-        <h2 className="mb-3 text-lg font-semibold text-slate-900">Scan Result</h2>
-        {result ? (
+      <section ref={resultRef} className="mt-6">
+        <h2 className="mb-3 text-xl font-semibold text-slate-900">Scan Result</h2>
+        {isLoading ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-600">Analyzing text...</p>
+          </div>
+        ) : null}
+        {!isLoading && result ? (
           <RiskCard
             risk_level={result.risk_level}
             risk_score={result.risk_score}
@@ -77,13 +126,14 @@ export default function ManualScanPage() {
             reasons={result.reasons}
             recommendations={result.recommendations}
           />
-        ) : (
-          <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            No data.
-          </p>
-        )}
+        ) : null}
+        {!isLoading && !result ? (
+          <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+            <p>No scan result yet.</p>
+            <p className="mt-1">Enter text and click Scan to generate a risk report.</p>
+          </div>
+        ) : null}
       </section>
     </main>
   );
 }
-
