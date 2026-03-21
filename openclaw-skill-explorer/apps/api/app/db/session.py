@@ -1,19 +1,21 @@
-import sqlite3
-from pathlib import Path
+from collections.abc import Generator
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 
-
-def _resolve_sqlite_path(database_url: str) -> Path:
-    prefix = "sqlite:///"
-    if not database_url.startswith(prefix):
-        raise ValueError("Only sqlite URLs are supported in the initialization scaffold.")
-    raw = database_url[len(prefix):]
-    return Path(raw)
+engine = create_engine(
+    settings.database_url,
+    connect_args={"check_same_thread": False} if settings.database_url.startswith("sqlite") else {},
+)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def get_sqlite_connection() -> sqlite3.Connection:
-    db_path = _resolve_sqlite_path(settings.database_url)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(db_path)
-    return connection
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
