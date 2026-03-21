@@ -5,7 +5,14 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import RiskCard from "../../../components/RiskCard";
-import { getSkill, scanSkill, type SkillDetailResponse } from "../../../lib/api";
+import SkillCard from "../../../components/SkillCard";
+import {
+  getSimilarSkills,
+  getSkill,
+  scanSkill,
+  type SkillDetailResponse,
+  type SkillListItem,
+} from "../../../lib/api";
 
 function formatDate(value: string | null): string {
   if (!value) {
@@ -23,6 +30,7 @@ export default function SkillDetailPage() {
   const slug = params?.slug ?? "";
 
   const [skill, setSkill] = useState<SkillDetailResponse | null>(null);
+  const [similarSkills, setSimilarSkills] = useState<SkillListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +42,12 @@ export default function SkillDetailPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getSkill(slug);
-      setSkill(data);
+      const [detail, similar] = await Promise.all([
+        getSkill(slug),
+        getSimilarSkills(slug, 5),
+      ]);
+      setSkill(detail);
+      setSimilarSkills(similar.items);
     } catch (loadError) {
       setError("Failed to load skill.");
     } finally {
@@ -127,6 +139,30 @@ export default function SkillDetailPage() {
         ) : (
           <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
             No risk report available yet.
+          </p>
+        )}
+      </section>
+
+      <section className="mt-6">
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Similar Skills</h2>
+        {similarSkills.length > 0 ? (
+          <div className="grid gap-4">
+            {similarSkills.map((item) => (
+              <SkillCard
+                key={item.slug}
+                name={item.name}
+                slug={item.slug}
+                description={item.description}
+                category={item.category}
+                stars={item.stars}
+                updated_at={item.last_repo_updated_at}
+                risk_level={item.risk_level ?? null}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            No similar skills found.
           </p>
         )}
       </section>

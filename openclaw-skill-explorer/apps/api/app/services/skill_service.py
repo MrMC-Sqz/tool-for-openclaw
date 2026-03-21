@@ -1,13 +1,30 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TypedDict
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
+from app.models.risk_report import RiskReport
 from app.models.skill import Skill
 from app.models.source import Source
 from app.services.summarizer import summarize_readme
+
+SEARCH_WEIGHTS = {
+    "name": 5,
+    "description": 3,
+    "readme_summary": 2,
+    "category": 2,
+    "tags": 2,
+}
+
+
+class SearchSkillsResult(TypedDict):
+    items: list[Skill]
+    total: int
+    relevance_scores: dict[int, int]
+    latest_reports: dict[int, RiskReport | None]
 
 
 def get_or_create_curated_source(db: Session) -> Source:
@@ -70,3 +87,130 @@ def ensure_skill_readme_summary(db: Session, skill: Skill) -> str | None:
     db.add(skill)
     db.flush()
     return summary
+
+
+def _latest_risk_report(skill: Skill) -> RiskReport | None:
+    if not skill.risk_reports:
+        return None
+    return max(
+        skill.risk_reports,
+        key=lambda report: (report.scanned_at or datetime.min, report.id),
+    )
+
+
+def _contains(haystack: str | None, needle: str) -> bool:
+    if not haystack:
+        return False
+    return needle in haystack.lower()
+
+
+def _compute_relevance_score(skill: Skill, query: str) -> int:
+    score = 0
+    if _contains(skill.name, query):
+        score += SEARCH_WEIGHTS["name"]
+    if _contains(skill.description, query):
+        score += SEARCH_WEIGHTS["description"]
+    if _contains(skill.readme_summary, query):
+        score += SEARCH_WEIGHTS["readme_summary"]
+    if _contains(skill.category, query):
+        score += SEARCH_WEIGHTS["category"]
+    if any(_contains(tag.name, query) for tag in skill.tags):
+        score += SEARCH_WEIGHTS["tags"]
+    return score
+
+
+def search_skills(
+    db: Session,
+    query: str | None,
+    filters: dict,
+    pagination: dict,
+) -> SearchSkillsResult:
+    normalized_query = (query or "").strip().lower()
+    normalized_category = (filters.get("category") or "").strip()
+    normalized_risk_level = (filters.get("risk_level") or "").strip().upper()
+    min_stars = filters.get("min_stars")
+    updated_after = filters.get("updated_after")
+    sort = pagination.get("sort", "stars_desc")
+    page = max(1, int(pagination.get("page", 1)))
+    page_size = max(1, int(pagination.get("page_size", 20)))
+
+    db_query = (
+        db.query(Skill)
+        .options(
+            selectinload(Skill.tags),
+            selectinload(Skill.risk_reports),
+        )
+    )
+    if normalized_category:
+        db_query = db_query.filter(Skill.category == normalized_category)
+    if min_stars is not None:
+        db_query = db_query.filter(Skill.stars >= int(min_stars))
+    if updated_after is not None:
+        db_query = db_query.filter(Skill.last_repo_updated_at >= updated_after)
+
+    candidates = db_query.all()
+
+    latest_reports: dict[int, RiskReport | None] = {
+        skill.id: _latest_risk_report(skill) for skill in candidates
+    }
+    if normalized_risk_level:
+        candidates = [
+            skill
+            for skill in candidates
+            if latest_reports.get(skill.id)
+            and latest_reports[skill.id].risk_level.upper() == normalized_risk_level
+        ]
+
+    relevance_scores: dict[int, int] = {}
+    if normalized_query:
+        matched: list[Skill] = []
+        for skill in candidates:
+            score = _compute_relevance_score(skill, normalized_query)
+            if score > 0:
+                relevance_scores[skill.id] = score
+                matched.append(skill)
+        candidates = matched
+    else:
+        relevance_scores = {skill.id: 0 for skill in candidates}
+
+    if normalized_query:
+        candidates.sort(
+            key=lambda skill: (
+                -relevance_scores.get(skill.id, 0),
+                -(skill.stars or 0),
+                -(skill.updated_at.timestamp() if skill.updated_at else 0),
+            )
+        )
+    elif sort == "updated_desc":
+        candidates.sort(
+            key=lambda skill: (
+                -(skill.last_repo_updated_at.timestamp() if skill.last_repo_updated_at else 0),
+                -(skill.stars or 0),
+                skill.name.lower(),
+            )
+        )
+    elif sort == "name_asc":
+        candidates.sort(
+            key=lambda skill: (
+                skill.name.lower(),
+                -(skill.stars or 0),
+            )
+        )
+    else:
+        candidates.sort(
+            key=lambda skill: (
+                -(skill.stars or 0),
+                -(skill.last_repo_updated_at.timestamp() if skill.last_repo_updated_at else 0),
+                skill.name.lower(),
+            )
+        )
+
+    total = len(candidates)
+    offset = (page - 1) * page_size
+    items = candidates[offset : offset + page_size]
+    return {
+        "items": items,
+        "total": total,
+        "relevance_scores": relevance_scores,
+        "latest_reports": latest_reports,
+    }

@@ -51,15 +51,23 @@ export type SkillDetailResponse = {
   category: string | null;
   stars: number;
   last_repo_updated_at: string | null;
+  readme_summary: string | null;
   latest_risk_report: RiskReport | null;
 };
 
 export type SkillQueryParams = {
   q?: string;
   category?: string;
-  sort?: "stars_desc" | "updated_desc" | "name_asc";
+  risk_level?: string;
+  min_stars?: number;
+  updated_after?: string;
+  sort?: "stars_desc" | "updated_desc" | "name_asc" | "relevance_desc";
   page?: number;
   page_size?: number;
+};
+
+export type SimilarSkillsResponse = {
+  items: SkillListItem[];
 };
 
 function buildUrl(path: string, params?: Record<string, string | number | undefined>) {
@@ -102,6 +110,11 @@ export async function getSkill(slug: string): Promise<SkillDetailResponse> {
   return request<SkillDetailResponse>(url);
 }
 
+export async function getSimilarSkills(slug: string, top_k = 5): Promise<SimilarSkillsResponse> {
+  const url = buildUrl(`/api/skills/${slug}/similar`, { top_k });
+  return request<SimilarSkillsResponse>(url);
+}
+
 export async function scanSkill(slug: string): Promise<RiskReport> {
   const url = buildUrl(`/api/skills/${slug}/scan`);
   return request<RiskReport>(url, { method: "POST" });
@@ -114,4 +127,3 @@ export async function scanText(text: string, type: "readme" | "manifest"): Promi
     body: JSON.stringify({ text }),
   });
 }
-

@@ -12,6 +12,8 @@ class SkillListItem(BaseModel):
     category: str | None
     stars: int
     last_repo_updated_at: datetime | None
+    risk_level: str | None = None
+    relevance_score: int | None = None
 
 
 class SkillListResponse(BaseModel):
@@ -33,3 +35,7 @@ class SkillDetailResponse(BaseModel):
     last_repo_updated_at: datetime | None
     readme_summary: str | None
     latest_risk_report: RiskReportOut | None
+
+
+class SimilarSkillsResponse(BaseModel):
+    items: list[SkillListItem]
