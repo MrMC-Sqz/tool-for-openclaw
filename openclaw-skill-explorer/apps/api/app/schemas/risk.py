@@ -21,6 +21,7 @@ class RiskFlags(BaseModel):
 class ScanResponse(BaseModel):
     risk_level: str
     risk_score: int
+    explanation: str
     flags: RiskFlags
     matched_keywords: dict[str, list[str]]
     reasons: list[str]
@@ -32,4 +33,3 @@ class RiskReportOut(ScanResponse):
     skill_id: int | None
     input_type: str
     scanned_at: datetime
-

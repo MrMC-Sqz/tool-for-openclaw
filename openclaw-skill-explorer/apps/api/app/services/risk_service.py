@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.models.risk_report import RiskReport
 from app.models.skill import Skill
+from app.services.recommendation_enhancer import enhance_recommendations
 from app.services.risk_engine import scan_text
+from app.services.risk_explainer import refine_risk_explanation
 from app.services.text_utils import build_skill_analysis_text
 
 CAPABILITY_FIELDS = [
@@ -93,7 +95,21 @@ def _persist_risk_report(
 ) -> RiskReport:
     flags = scan_result["flags"]
     reasons = scan_result["reasons"]
-    recommendations = scan_result["recommendations"]
+    matched_keywords = scan_result.get("matched_keywords", {})
+    base_explanation = " ".join(reasons).strip()
+    explanation = refine_risk_explanation(
+        flags=flags,
+        matched_keywords=matched_keywords,
+        base_reasons=reasons,
+    )
+    if not explanation:
+        explanation = base_explanation
+
+    recommendations = enhance_recommendations(
+        risk_level=scan_result["risk_level"],
+        flags=flags,
+        base_recommendations=scan_result["recommendations"],
+    )
 
     report = RiskReport(
         skill_id=skill_id,
@@ -110,13 +126,8 @@ def _persist_risk_report(
         unclear_docs=_to_int_flag(flags.get("unclear_docs", False)),
         permissions_detected=json.dumps(_build_permissions_detected(flags)),
         sensitive_scopes=json.dumps(_build_sensitive_scopes(flags)),
-        findings_json=json.dumps(
-            {
-                "matched_keywords": scan_result.get("matched_keywords", {}),
-                "reasons": reasons,
-            }
-        ),
-        explanation=" ".join(reasons),
+        findings_json=json.dumps({"matched_keywords": matched_keywords, "reasons": reasons}),
+        explanation=explanation,
         recommendations=json.dumps(recommendations),
         scanned_at=datetime.utcnow(),
     )
@@ -154,9 +165,9 @@ def risk_report_to_scan_result(report: RiskReport) -> dict:
     return {
         "risk_level": report.risk_level,
         "risk_score": report.risk_score,
+        "explanation": report.explanation or "",
         "flags": flags,
         "matched_keywords": matched_keywords,
         "reasons": reasons,
         "recommendations": recommendations,
     }
-

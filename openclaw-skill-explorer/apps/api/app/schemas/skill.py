@@ -31,4 +31,5 @@ class SkillDetailResponse(BaseModel):
     category: str | None
     stars: int
     last_repo_updated_at: datetime | None
+    readme_summary: str | None
     latest_risk_report: RiskReportOut | None

@@ -14,6 +14,7 @@ from app.services.risk_service import (
     get_latest_risk_report_for_skill,
     risk_report_to_scan_result,
 )
+from app.services.skill_service import ensure_skill_readme_summary
 
 router = APIRouter(prefix="/api/skills", tags=["skills"])
 
@@ -85,6 +86,13 @@ def get_skill_detail(slug: str, db: Session = Depends(get_db)) -> SkillDetailRes
     if not skill:
         raise HTTPException(status_code=404, detail="skill not found")
 
+    try:
+        ensure_skill_readme_summary(db, skill)
+        db.commit()
+        db.refresh(skill)
+    except SQLAlchemyError:
+        db.rollback()
+
     latest_report = get_latest_risk_report_for_skill(db, skill.id)
     return SkillDetailResponse(
         name=skill.name,
@@ -96,6 +104,7 @@ def get_skill_detail(slug: str, db: Session = Depends(get_db)) -> SkillDetailRes
         category=skill.category,
         stars=skill.stars,
         last_repo_updated_at=skill.last_repo_updated_at,
+        readme_summary=skill.readme_summary,
         latest_risk_report=_risk_report_out_or_none(latest_report),
     )
 
