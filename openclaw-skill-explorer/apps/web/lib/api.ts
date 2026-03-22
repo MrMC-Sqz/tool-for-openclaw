@@ -86,6 +86,44 @@ export type SourcesListResponse = {
   items: SourceListItem[];
 };
 
+export type SourceDetailResponse = {
+  id: number;
+  name: string;
+  type: string;
+  base_url: string | null;
+  is_active: number;
+  sync_status: string;
+  last_synced_at: string | null;
+  updated_at: string | null;
+  skill_count: number;
+  categories: Record<string, number>;
+  risk_levels: Record<string, number>;
+  skills: SkillListItem[];
+};
+
+export type ScanJobCreateResponse = {
+  job_id: number;
+  status: string;
+};
+
+export type ScanJobResultResponse = {
+  risk_report: RiskReport | null;
+  stats: Record<string, unknown> | null;
+};
+
+export type ScanJobResponse = {
+  id: number;
+  skill_id: number | null;
+  status: string;
+  input_type: string;
+  input_value: string | null;
+  error_message: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  result: ScanJobResultResponse | null;
+};
+
 function buildUrl(path: string, params?: Record<string, string | number | undefined>) {
   if (!appConfig.apiBaseUrl) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.");
@@ -150,4 +188,19 @@ export async function scanText(text: string, type: "readme" | "manifest"): Promi
 export async function getSources(): Promise<SourcesListResponse> {
   const url = buildUrl("/api/sources");
   return request<SourcesListResponse>(url);
+}
+
+export async function getSource(sourceId: number): Promise<SourceDetailResponse> {
+  const url = buildUrl(`/api/sources/${sourceId}`);
+  return request<SourceDetailResponse>(url);
+}
+
+export async function createSourceSyncJob(sourceId: number): Promise<ScanJobCreateResponse> {
+  const url = buildUrl(`/api/sources/${sourceId}/sync/jobs`);
+  return request<ScanJobCreateResponse>(url, { method: "POST" });
+}
+
+export async function getScanJob(jobId: number): Promise<ScanJobResponse> {
+  const url = buildUrl(`/api/scan/jobs/${jobId}`);
+  return request<ScanJobResponse>(url);
 }

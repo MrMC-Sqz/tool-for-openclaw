@@ -22,6 +22,7 @@ DEFAULT_SEED_FILE_PATH = PROJECT_ROOT / "scripts" / "data" / "skills_seed.json"
 DEFAULT_SEED_FILE_GLOB = "skills_seed*.json"
 DEFAULT_REPORT_DIR = PROJECT_ROOT / "scripts" / "reports"
 DEFAULT_SYNC_AUTO_SCAN = os.getenv("SYNC_AUTO_SCAN", "true").strip().lower() not in {"0", "false", "no"}
+CURATED_SOURCE_NAME = "OpenClaw Curated Seed"
 
 
 class SeedLoadResult(TypedDict):
@@ -138,6 +139,21 @@ def _load_external_source_batches() -> list[dict]:
             }
         )
     return batches
+
+
+def _load_external_source_batch_by_name(source_name: str) -> dict | None:
+    normalized_name = source_name.strip().lower()
+    for source_config in load_public_source_configs():
+        config_name = str(source_config.get("name") or "").strip()
+        if not config_name or config_name.lower() != normalized_name:
+            continue
+        return {
+            "name": config_name,
+            "source_type": str(source_config.get("type") or "external").strip() or "external",
+            "base_url": str(source_config.get("url") or source_config.get("base_url") or "").strip() or None,
+            "items": fetch_source_items(source_config),
+        }
+    return None
 
 
 def classify_error(exc: Exception) -> str:
@@ -337,3 +353,106 @@ def sync_once(
 
     overall_status = "partial" if stats["failed"] > 0 else "success"
     return stats, overall_status, source.name
+
+
+def sync_source_by_name(
+    db: Session,
+    *,
+    source_name: str,
+    max_retries: int = 2,
+    retry_delay_seconds: float = 0.5,
+) -> tuple[SyncStats, str, str]:
+    normalized_source_name = source_name.strip()
+    if not normalized_source_name:
+        raise ValueError("source_name must not be empty")
+
+    stats = build_empty_stats()
+
+    if normalized_source_name == CURATED_SOURCE_NAME:
+        seed_result = load_seed_items()
+        stats["source_files"] = seed_result["source_files"]
+        stats["total_raw"] = seed_result["total_raw"]
+        stats["invalid_items"] = seed_result["invalid_items"]
+        stats["duplicate_items"] = seed_result["duplicate_items"]
+
+        source = get_or_create_curated_source(db)
+        source.sync_status = "running"
+        db.flush()
+        failed = 0
+
+        for item in seed_result["items"]:
+            stats["total_processed"] += 1
+            try:
+                action = execute_with_retry(
+                    db,
+                    item,
+                    source.id,
+                    max_retries=max_retries,
+                    retry_delay_seconds=retry_delay_seconds,
+                )
+                if action == "inserted":
+                    stats["inserted"] += 1
+                else:
+                    stats["updated"] += 1
+            except Exception as exc:  # noqa: BLE001
+                failed += 1
+                stats["failed"] += 1
+                category = classify_error(exc)
+                if category == "validation":
+                    stats["failed_validation"] += 1
+                elif category == "db":
+                    stats["failed_db"] += 1
+                else:
+                    stats["failed_unexpected"] += 1
+
+        source.last_synced_at = datetime.utcnow()
+        source.sync_status = "partial" if failed > 0 else "success"
+        db.flush()
+        return stats, source.sync_status, source.name
+
+    batch = _load_external_source_batch_by_name(normalized_source_name)
+    if batch is None:
+        raise ValueError(f"source config not found for {normalized_source_name}")
+
+    stats["source_files"] = 1
+    stats["total_raw"] = len(batch["items"])
+    source = get_or_create_source(
+        db,
+        name=batch["name"],
+        source_type=batch["source_type"],
+        base_url=batch["base_url"],
+        is_active=1,
+    )
+    source.sync_status = "running"
+    db.flush()
+    failed = 0
+
+    for item in batch["items"]:
+        stats["total_processed"] += 1
+        try:
+            action = execute_with_retry(
+                db,
+                item,
+                source.id,
+                max_retries=max_retries,
+                retry_delay_seconds=retry_delay_seconds,
+            )
+            if action == "inserted":
+                stats["inserted"] += 1
+            else:
+                stats["updated"] += 1
+        except Exception as exc:  # noqa: BLE001
+            failed += 1
+            stats["failed"] += 1
+            category = classify_error(exc)
+            if category == "validation":
+                stats["failed_validation"] += 1
+            elif category == "db":
+                stats["failed_db"] += 1
+            else:
+                stats["failed_unexpected"] += 1
+
+    source.last_synced_at = datetime.utcnow()
+    source.sync_status = "partial" if failed > 0 else "success"
+    db.flush()
+    return stats, source.sync_status, source.name

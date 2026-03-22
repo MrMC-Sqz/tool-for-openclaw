@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { getSources, type SourceListItem } from "../../lib/api";
@@ -40,7 +41,7 @@ function sourceTypeLabel(type: string): string {
   if (normalized === "generated_catalog") {
     return "Generated Catalog";
   }
-  if (normalized === "curated_seed") {
+  if (normalized === "curated_list") {
     return "Curated Seed";
   }
   if (normalized === "remote_json") {
@@ -65,6 +66,9 @@ export default function SourcesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -110,6 +114,28 @@ export default function SourcesPage() {
     };
   }, [items]);
 
+  const filteredItems = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return items.filter((source) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        source.name.toLowerCase().includes(normalizedSearch) ||
+        sourceTypeLabel(source.type).toLowerCase().includes(normalizedSearch);
+      const matchesType = !typeFilter || source.type === typeFilter;
+      const matchesStatus = !statusFilter || source.sync_status === statusFilter;
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [items, search, typeFilter, statusFilter]);
+
+  const typeOptions = useMemo(
+    () => Array.from(new Set(items.map((source) => source.type))).sort(),
+    [items],
+  );
+  const statusOptions = useMemo(
+    () => Array.from(new Set(items.map((source) => source.sync_status))).sort(),
+    [items],
+  );
+
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-8">
       <section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
@@ -122,8 +148,8 @@ export default function SourcesPage() {
               Public and curated sources
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-              Monitor which catalogs feed the skill index, how recently they synced, and how much
-              searchable coverage each one contributes.
+              Filter source health, inspect coverage, and open operational detail pages to refresh
+              a single source without re-running the whole catalog sync.
             </p>
           </div>
           <button
@@ -168,6 +194,42 @@ export default function SourcesPage() {
         </article>
       </section>
 
+      <section className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_auto_auto]">
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Filter by source name or type"
+          aria-label="Filter sources"
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none ring-slate-300 focus:ring-2"
+        />
+        <select
+          value={typeFilter}
+          onChange={(event) => setTypeFilter(event.target.value)}
+          aria-label="Filter sources by type"
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+        >
+          <option value="">All types</option>
+          {typeOptions.map((option) => (
+            <option key={option} value={option}>
+              {sourceTypeLabel(option)}
+            </option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          aria-label="Filter sources by sync status"
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+        >
+          <option value="">All statuses</option>
+          {statusOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </section>
+
       {error ? (
         <section className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           <p>{error}</p>
@@ -200,9 +262,30 @@ export default function SourcesPage() {
         </section>
       ) : null}
 
-      {!isLoading && items.length > 0 ? (
+      {!isLoading && items.length > 0 && filteredItems.length === 0 ? (
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">No sources match</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Try a different source name, type, or sync status filter.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setTypeFilter("");
+              setStatusFilter("");
+            }}
+            className="mt-4 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            aria-label="Reset source filters"
+          >
+            Reset Filters
+          </button>
+        </section>
+      ) : null}
+
+      {!isLoading && filteredItems.length > 0 ? (
         <section className="mt-6 grid gap-4 md:grid-cols-2">
-          {items.map((source) => (
+          {filteredItems.map((source) => (
             <article
               key={source.id}
               className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"
@@ -267,6 +350,16 @@ export default function SourcesPage() {
                     Managed locally through seed data or generated catalog rules.
                   </p>
                 )}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+                <p className="text-sm text-slate-600">Open details to inspect skills and run sync.</p>
+                <Link
+                  href={`/sources/${source.id}`}
+                  className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                >
+                  Manage Source
+                </Link>
               </div>
             </article>
           ))}

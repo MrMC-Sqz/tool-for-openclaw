@@ -13,9 +13,9 @@ from app.models.scan_job_result import ScanJobResult
 from app.models.skill import Skill
 from app.services.cache_service import invalidate_prefix
 from app.services.risk_service import create_risk_report_for_skill, create_risk_report_from_text
-from app.services.sync_service import sync_once, write_sync_report
+from app.services.sync_service import sync_once, sync_source_by_name, write_sync_report
 
-SCAN_JOB_INPUT_TYPES = {"readme", "manifest", "skill", "sync_sources"}
+SCAN_JOB_INPUT_TYPES = {"readme", "manifest", "skill", "sync_sources", "sync_source"}
 SCAN_JOB_TERMINAL_STATUSES = {"succeeded", "failed"}
 JOB_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="scan-job")
 
@@ -40,7 +40,20 @@ def create_scan_job(
         has_active_sync_job = (
             db.query(ScanJob.id)
             .filter(
-                ScanJob.input_type == "sync_sources",
+                ScanJob.input_type.in_(("sync_sources", "sync_source")),
+                ScanJob.status.in_(("pending", "running")),
+            )
+            .first()
+        )
+        if has_active_sync_job:
+            raise ValueError("a sync job is already pending or running")
+    if normalized_input_type == "sync_source":
+        if not normalized_input_value:
+            raise ValueError("input_value must not be empty for source sync jobs")
+        has_active_sync_job = (
+            db.query(ScanJob.id)
+            .filter(
+                ScanJob.input_type.in_(("sync_sources", "sync_source")),
                 ScanJob.status.in_(("pending", "running")),
             )
             .first()
@@ -128,6 +141,18 @@ def run_scan_job(job_id: int) -> None:
                 "stats": stats,
                 "report_path": str(report_path),
             }
+        elif job.input_type == "sync_source":
+            source_name = (job.input_value or "").strip()
+            if not source_name:
+                raise ValueError("source sync job missing source name")
+            stats, sync_status, synced_source_name = sync_source_by_name(db, source_name=source_name)
+            report_path = write_sync_report(stats, status=sync_status, source_name=synced_source_name)
+            stats_payload = {
+                "sync_status": sync_status,
+                "source_name": synced_source_name,
+                "stats": stats,
+                "report_path": str(report_path),
+            }
         else:
             raise ValueError(f"unsupported job input_type: {job.input_type}")
 
@@ -147,7 +172,7 @@ def run_scan_job(job_id: int) -> None:
                 invalidate_prefix(f"skills:detail:{skill_slug}:")
             else:
                 invalidate_prefix("skills:detail:")
-        elif job.input_type == "sync_sources":
+        elif job.input_type in {"sync_sources", "sync_source"}:
             invalidate_prefix("skills:list:")
             invalidate_prefix("skills:detail:")
 
