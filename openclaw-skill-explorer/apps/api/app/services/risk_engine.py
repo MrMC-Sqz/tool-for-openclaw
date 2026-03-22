@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.services.risk_keywords import RISK_KEYWORDS, RISK_WEIGHTS
 from app.services.text_utils import safe_lower
 
+RISK_POLICY_VERSION = "v1.0.0"
 CAPABILITY_ORDER = [
     "file_read",
     "file_write",
@@ -60,6 +61,24 @@ def classify_risk_level(score: int) -> str:
     return "CRITICAL"
 
 
+def compare_policy_versions(current_version: str, target_version: str) -> int:
+    def _parse(version: str) -> tuple[int, int, int]:
+        normalized = version.lower().strip().lstrip("v")
+        parts = normalized.split(".")
+        major = int(parts[0]) if len(parts) > 0 and parts[0].isdigit() else 0
+        minor = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+        patch = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
+        return (major, minor, patch)
+
+    current = _parse(current_version)
+    target = _parse(target_version)
+    if current < target:
+        return -1
+    if current > target:
+        return 1
+    return 0
+
+
 def generate_reasons(flags: dict[str, bool], matched_keywords: dict[str, list[str]]) -> list[str]:
     reasons: list[str] = []
 
@@ -115,18 +134,31 @@ def generate_recommendations(flags: dict[str, bool], level: str) -> list[str]:
     return deduped
 
 
+def generate_evidence_snippets(matched_keywords: dict[str, list[str]]) -> list[str]:
+    snippets: list[str] = []
+    for capability in CAPABILITY_ORDER:
+        keywords = matched_keywords.get(capability, [])
+        for keyword in keywords[:2]:
+            snippet = f"{capability}:{keyword}"
+            if snippet not in snippets:
+                snippets.append(snippet)
+    return snippets
+
+
 def scan_text(text: str, metadata_context: dict | None = None) -> dict:
     flags, matched_keywords = detect_capabilities(text, metadata_context=metadata_context)
     score = calculate_risk_score(flags)
     level = classify_risk_level(score)
     reasons = generate_reasons(flags, matched_keywords)
     recommendations = generate_recommendations(flags, level)
+    evidence_snippets = generate_evidence_snippets(matched_keywords)
     return {
+        "policy_version": RISK_POLICY_VERSION,
         "risk_level": level,
         "risk_score": score,
         "flags": flags,
         "matched_keywords": matched_keywords,
+        "evidence_snippets": evidence_snippets,
         "reasons": reasons,
         "recommendations": recommendations,
     }
-

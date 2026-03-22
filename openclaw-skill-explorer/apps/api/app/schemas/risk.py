@@ -19,11 +19,13 @@ class RiskFlags(BaseModel):
 
 
 class ScanResponse(BaseModel):
+    policy_version: str = "v1.0.0"
     risk_level: str
     risk_score: int
     explanation: str
     flags: RiskFlags
     matched_keywords: dict[str, list[str]]
+    evidence_snippets: list[str] = []
     reasons: list[str]
     recommendations: list[str]
 

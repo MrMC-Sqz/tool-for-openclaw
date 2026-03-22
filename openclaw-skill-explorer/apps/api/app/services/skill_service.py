@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.risk_report import RiskReport
 from app.models.skill import Skill
 from app.models.source import Source
+from app.services.review_service import get_latest_skill_review, get_skill_review_state
 from app.services.summarizer import summarize_readme
 
 SEARCH_WEIGHTS = {
@@ -25,6 +26,8 @@ class SearchSkillsResult(TypedDict):
     total: int
     relevance_scores: dict[int, int]
     latest_reports: dict[int, RiskReport | None]
+    review_states: dict[int, str]
+    latest_reviewers: dict[int, str | None]
 
 
 def get_or_create_curated_source(db: Session) -> Source:
@@ -128,6 +131,8 @@ def search_skills(
     normalized_query = (query or "").strip().lower()
     normalized_category = (filters.get("category") or "").strip()
     normalized_risk_level = (filters.get("risk_level") or "").strip().upper()
+    normalized_review_state = (filters.get("review_state") or "").strip().lower()
+    normalized_reviewer = (filters.get("reviewer") or "").strip().lower()
     min_stars = filters.get("min_stars")
     updated_after = filters.get("updated_after")
     sort = pagination.get("sort", "stars_desc")
@@ -139,6 +144,7 @@ def search_skills(
         .options(
             selectinload(Skill.tags),
             selectinload(Skill.risk_reports),
+            selectinload(Skill.reviews),
         )
     )
     if normalized_category:
@@ -153,12 +159,32 @@ def search_skills(
     latest_reports: dict[int, RiskReport | None] = {
         skill.id: _latest_risk_report(skill) for skill in candidates
     }
+    review_states: dict[int, str] = {skill.id: get_skill_review_state(skill) for skill in candidates}
+    latest_reviewers: dict[int, str | None] = {
+        skill.id: (
+            (latest_review.reviewer.strip() if latest_review and latest_review.reviewer else None)
+        )
+        for skill in candidates
+        for latest_review in [get_latest_skill_review(skill)]
+    }
     if normalized_risk_level:
         candidates = [
             skill
             for skill in candidates
             if latest_reports.get(skill.id)
             and latest_reports[skill.id].risk_level.upper() == normalized_risk_level
+        ]
+    if normalized_review_state:
+        candidates = [
+            skill
+            for skill in candidates
+            if review_states.get(skill.id, "pending_review") == normalized_review_state
+        ]
+    if normalized_reviewer:
+        candidates = [
+            skill
+            for skill in candidates
+            if (latest_reviewers.get(skill.id) or "").lower() == normalized_reviewer
         ]
 
     relevance_scores: dict[int, int] = {}
@@ -213,4 +239,6 @@ def search_skills(
         "total": total,
         "relevance_scores": relevance_scores,
         "latest_reports": latest_reports,
+        "review_states": review_states,
+        "latest_reviewers": latest_reviewers,
     }

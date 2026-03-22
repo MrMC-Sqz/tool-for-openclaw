@@ -41,12 +41,21 @@ python -m app.db.init_db
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+Optional (Postgres mode):
+
+```bash
+./scripts/init_postgres_db.sh
+./scripts/run_api_postgres.sh
+```
+
 3. Seed skills:
 
 ```bash
 cd ../../
 python scripts/sync_sources.py
 ```
+
+`sync_sources.py` will automatically load all files matching `scripts/data/skills_seed*.json`.
 
 4. Start frontend:
 
@@ -60,6 +69,13 @@ npm run dev
 
 ```bash
 docker compose up --build
+```
+
+Optional (run API with Postgres container profile):
+
+```bash
+export DATABASE_URL=postgresql+psycopg://openclaw:openclaw@postgres:5432/openclaw_skill_explorer
+docker compose --profile postgres up --build
 ```
 
 Services:
@@ -110,6 +126,7 @@ docker compose down -v
 
 - Manual scan interface for README / manifest text
 - Configuration guidance via surfaced recommendations
+- Background job workflow for scan + source sync (`/api/scan/*/jobs`, `/api/scan/jobs/{job_id}`)
 - Demo fallback data for resilient demos when API data is unavailable
 
 ## Tech Stack
@@ -123,7 +140,8 @@ docker compose down -v
 ### Backend
 
 - FastAPI
-- SQLite
+- SQLite (default)
+- PostgreSQL (supported runtime target)
 - SQLAlchemy
 
 ### AI
@@ -192,6 +210,22 @@ python -m app.db.init_db
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+Postgres-compatible local run:
+
+```bash
+export DATABASE_URL=postgresql+psycopg://openclaw:openclaw@localhost:5432/openclaw_skill_explorer
+python -m app.db.init_db
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Optional API key auth (RBAC):
+
+```bash
+export AUTH_ENABLED=true
+export AUTH_API_KEYS=admin:your-admin-key,reviewer:your-reviewer-key,viewer:your-viewer-key
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
 ### Frontend
 
 ```bash
@@ -204,11 +238,19 @@ npm run dev
 
 - `GET /health` -> `{ "status": "ok" }`
 - `GET /ready` -> `{ "status": "ready" }`
+- `GET /metrics` -> lightweight in-process request metrics (admin when auth is enabled)
 
 ## Docker Usage
 
 ```bash
 docker compose up --build
+```
+
+With Postgres profile:
+
+```bash
+export DATABASE_URL=postgresql+psycopg://openclaw:openclaw@postgres:5432/openclaw_skill_explorer
+docker compose --profile postgres up --build
 ```
 
 Default URLs:
@@ -235,6 +277,13 @@ See [docs/interview.md](docs/interview.md) for:
 - a 60-second project explanation
 - design decisions and trade-offs
 - scaling roadmap and architecture discussion points
+
+## Production Track Artifacts
+
+- User problem definition: [docs/user-problem.md](docs/user-problem.md)
+- KPI and release gates: [docs/kpi.md](docs/kpi.md)
+- Execution backlog by phase: [docs/task-list.md](docs/task-list.md)
+- Disaster recovery runbook: [docs/disaster-recovery.md](docs/disaster-recovery.md)
 
 ## Future Improvements
 

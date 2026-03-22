@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.models.scan_job_result import ScanJobResult
     from app.models.skill import Skill
 
 
@@ -30,3 +31,6 @@ class ScanJob(Base):
     )
 
     skill: Mapped["Skill | None"] = relationship("Skill", back_populates="scan_jobs")
+    result: Mapped["ScanJobResult | None"] = relationship(
+        "ScanJobResult", back_populates="job", cascade="all, delete-orphan", uselist=False
+    )
