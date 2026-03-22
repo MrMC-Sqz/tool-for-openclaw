@@ -56,6 +56,7 @@ python scripts/sync_sources.py
 ```
 
 `sync_sources.py` will automatically load all files matching `scripts/data/skills_seed*.json`.
+It will also ingest configured public sources from `scripts/data/public_source_configs.json`.
 
 4. Start frontend:
 
@@ -239,6 +240,7 @@ npm run dev
 - `GET /health` -> `{ "status": "ok" }`
 - `GET /ready` -> `{ "status": "ready" }`
 - `GET /metrics` -> lightweight in-process request metrics (admin when auth is enabled)
+- `GET /api/sources` -> source health, sync status, and skill counts by source
 
 ## Docker Usage
 
@@ -283,6 +285,9 @@ See [docs/interview.md](docs/interview.md) for:
 - User problem definition: [docs/user-problem.md](docs/user-problem.md)
 - KPI and release gates: [docs/kpi.md](docs/kpi.md)
 - Execution backlog by phase: [docs/task-list.md](docs/task-list.md)
+- Risk benchmarking guide: [docs/risk-benchmarking.md](docs/risk-benchmarking.md)
+- Feedback loop guide: [docs/feedback-loop.md](docs/feedback-loop.md)
+- Policy changelog: [docs/policy-changelog.md](docs/policy-changelog.md)
 - Disaster recovery runbook: [docs/disaster-recovery.md](docs/disaster-recovery.md)
 
 ## Future Improvements

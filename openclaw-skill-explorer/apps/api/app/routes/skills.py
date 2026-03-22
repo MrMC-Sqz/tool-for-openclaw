@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
@@ -14,6 +15,10 @@ from app.models.skill_review import SkillReview
 from app.schemas.job import ScanJobCreateResponse
 from app.schemas.risk import RiskReportOut
 from app.schemas.skill import (
+    FeedbackSummaryResponse,
+    PolicyChangeLogCreateRequest,
+    PolicyChangeLogListResponse,
+    PolicyChangeLogOut,
     ReviewSummaryItemOut,
     ReviewSummaryResponse,
     RemediationChecklistResponse,
@@ -22,11 +27,21 @@ from app.schemas.skill import (
     SkillAuditLogOut,
     SimilarSkillsResponse,
     SkillDetailResponse,
+    SkillFeedbackCreateRequest,
+    SkillFeedbackListResponse,
+    SkillFeedbackOut,
     SkillListItem,
     SkillListResponse,
     SkillReviewCreateRequest,
     SkillReviewListResponse,
     SkillReviewOut,
+)
+from app.services.feedback_service import (
+    create_policy_change_log,
+    create_skill_feedback,
+    list_policy_change_logs,
+    list_skill_feedback,
+    summarize_feedback,
 )
 from app.services.job_service import create_scan_job, enqueue_scan_job
 from app.services.recommendation_service import get_similar_skills
@@ -64,6 +79,20 @@ def _invalidate_skills_cache(slug: str | None = None) -> None:
         invalidate_prefix(f"{SKILL_DETAIL_CACHE_PREFIX}:")
 
 
+def _list_cache_freshness(db: Session) -> str:
+    latest_skill_update = db.query(func.max(Skill.updated_at)).scalar()
+    if not latest_skill_update:
+        return "empty"
+    return latest_skill_update.isoformat()
+
+
+def _detail_cache_freshness(db: Session, slug: str) -> str:
+    latest_skill_update = db.query(Skill.updated_at).filter(Skill.slug == slug).scalar()
+    if not latest_skill_update:
+        return "missing"
+    return latest_skill_update.isoformat()
+
+
 @router.get("", response_model=SkillListResponse)
 def list_skills(
     q: str | None = Query(default=None),
@@ -81,6 +110,7 @@ def list_skills(
     cache_key = make_cache_key(
         SKILLS_LIST_CACHE_PREFIX,
         {
+            "freshness": _list_cache_freshness(db),
             "q": q,
             "category": category,
             "risk_level": risk_level,
@@ -209,6 +239,113 @@ def export_review_summary_csv(
     return Response(content=csv_text, media_type="text/csv", headers=headers)
 
 
+@router.get("/feedback/summary", response_model=FeedbackSummaryResponse)
+def get_feedback_summary(
+    status: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> FeedbackSummaryResponse:
+    summary = summarize_feedback(db, status=status)
+    return FeedbackSummaryResponse(
+        total_feedback=summary["total_feedback"],
+        by_type=summary["by_type"],
+        by_severity=summary["by_severity"],
+        prioritized_items=summary["prioritized_items"],
+        recent_items=[
+            SkillFeedbackOut(
+                id=item.id,
+                reporter=item.reporter,
+                feedback_type=item.feedback_type,
+                severity=item.severity,
+                status=item.status,
+                expected_risk_level=item.expected_risk_level,
+                actual_risk_level=item.actual_risk_level,
+                comment=item.comment,
+                risk_report_id=item.risk_report_id,
+                created_at=item.created_at,
+            )
+            for item in summary["recent_items"]
+        ],
+    )
+
+
+@router.get("/feedback/export")
+def export_feedback_csv(
+    status: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> Response:
+    summary = summarize_feedback(db, status=status)
+    lines = [
+        "feedback_id,reporter,feedback_type,severity,status,expected_risk_level,actual_risk_level,risk_report_id,comment,created_at"
+    ]
+    for item in summary["recent_items"]:
+        comment = (item.comment or "").replace('"', '""')
+        lines.append(
+            f'{item.id},{item.reporter},{item.feedback_type},{item.severity},{item.status},{item.expected_risk_level or ""},{item.actual_risk_level or ""},{item.risk_report_id or ""},"{comment}",{item.created_at.isoformat()}'
+        )
+    headers = {"Content-Disposition": 'attachment; filename="skill_feedback_recent.csv"'}
+    return Response(content="\n".join(lines), media_type="text/csv", headers=headers)
+
+
+@router.get("/policy-changelog", response_model=PolicyChangeLogListResponse)
+def get_policy_changelog(
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
+) -> PolicyChangeLogListResponse:
+    items = list_policy_change_logs(db, limit=limit)
+    return PolicyChangeLogListResponse(
+        items=[
+            PolicyChangeLogOut(
+                id=item.id,
+                policy_version=item.policy_version,
+                title=item.title,
+                change_type=item.change_type,
+                summary=item.summary,
+                author=item.author,
+                related_feedback_count=item.related_feedback_count,
+                published_at=item.published_at,
+            )
+            for item in items
+        ]
+    )
+
+
+@router.post("/policy-changelog", response_model=PolicyChangeLogOut)
+def create_policy_changelog_entry(
+    payload: PolicyChangeLogCreateRequest,
+    _role: str = Depends(require_roles("admin")),
+    db: Session = Depends(get_db),
+) -> PolicyChangeLogOut:
+    try:
+        item = create_policy_change_log(
+            db,
+            policy_version=payload.policy_version,
+            title=payload.title,
+            change_type=payload.change_type,
+            summary=payload.summary,
+            author=payload.author,
+            related_feedback_count=payload.related_feedback_count,
+        )
+        db.commit()
+        db.refresh(item)
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc))
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to persist policy changelog entry")
+
+    return PolicyChangeLogOut(
+        id=item.id,
+        policy_version=item.policy_version,
+        title=item.title,
+        change_type=item.change_type,
+        summary=item.summary,
+        author=item.author,
+        related_feedback_count=item.related_feedback_count,
+        published_at=item.published_at,
+    )
+
+
 def _risk_report_out_or_none(report) -> RiskReportOut | None:
     if report is None:
         return None
@@ -224,7 +361,10 @@ def _risk_report_out_or_none(report) -> RiskReportOut | None:
 
 @router.get("/{slug}", response_model=SkillDetailResponse)
 def get_skill_detail(slug: str, db: Session = Depends(get_db)) -> SkillDetailResponse:
-    cache_key = make_cache_key(f"{SKILL_DETAIL_CACHE_PREFIX}:{slug}", {"slug": slug})
+    cache_key = make_cache_key(
+        f"{SKILL_DETAIL_CACHE_PREFIX}:{slug}",
+        {"slug": slug, "freshness": _detail_cache_freshness(db, slug)},
+    )
     if settings.cache_enabled:
         cached = get_cache(cache_key)
         if cached is not None:
@@ -386,6 +526,79 @@ def get_skill_reviews(slug: str, db: Session = Depends(get_db)) -> SkillReviewLi
             )
             for review in reviews
         ]
+    )
+
+
+@router.get("/{slug}/feedback", response_model=SkillFeedbackListResponse)
+def get_skill_feedback_items(slug: str, db: Session = Depends(get_db)) -> SkillFeedbackListResponse:
+    skill = db.query(Skill).filter(Skill.slug == slug).first()
+    if not skill:
+        raise HTTPException(status_code=404, detail="skill not found")
+
+    items = list_skill_feedback(db, skill.id)
+    return SkillFeedbackListResponse(
+        items=[
+            SkillFeedbackOut(
+                id=item.id,
+                reporter=item.reporter,
+                feedback_type=item.feedback_type,
+                severity=item.severity,
+                status=item.status,
+                expected_risk_level=item.expected_risk_level,
+                actual_risk_level=item.actual_risk_level,
+                comment=item.comment,
+                risk_report_id=item.risk_report_id,
+                created_at=item.created_at,
+            )
+            for item in items
+        ]
+    )
+
+
+@router.post("/{slug}/feedback", response_model=SkillFeedbackOut)
+def submit_skill_feedback(
+    slug: str,
+    payload: SkillFeedbackCreateRequest,
+    _role: str = Depends(require_roles("reviewer", "admin")),
+    db: Session = Depends(get_db),
+) -> SkillFeedbackOut:
+    skill = db.query(Skill).filter(Skill.slug == slug).first()
+    if not skill:
+        raise HTTPException(status_code=404, detail="skill not found")
+
+    try:
+        item = create_skill_feedback(
+            db,
+            skill=skill,
+            reporter=payload.reporter,
+            feedback_type=payload.feedback_type,
+            severity=payload.severity,
+            status=payload.status,
+            expected_risk_level=payload.expected_risk_level,
+            actual_risk_level=payload.actual_risk_level,
+            comment=payload.comment,
+            risk_report_id=payload.risk_report_id,
+        )
+        db.commit()
+        db.refresh(item)
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc))
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to persist feedback")
+
+    return SkillFeedbackOut(
+        id=item.id,
+        reporter=item.reporter,
+        feedback_type=item.feedback_type,
+        severity=item.severity,
+        status=item.status,
+        expected_risk_level=item.expected_risk_level,
+        actual_risk_level=item.actual_risk_level,
+        comment=item.comment,
+        risk_report_id=item.risk_report_id,
+        created_at=item.created_at,
     )
 
 

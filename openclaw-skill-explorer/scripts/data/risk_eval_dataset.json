@@ -1,0 +1,202 @@
+[
+  {
+    "id": "case_read_only_local",
+    "title": "Read-only local helper",
+    "text": "This helper can read files from a project workspace, open file content for inspection, and read config values before presenting a structured summary to the operator. It focuses on analysis, validation, and review guidance with clear setup notes, sample usage, expected outputs, safety checks, and operator approval steps for every run.",
+    "metadata_context": {
+      "description": "Long-form guidance for inspection workflows with explicit setup, operator validation notes, and clear expected outputs.",
+      "readme": "Detailed overview covering setup, usage, examples, validation steps, rollback notes, and review checkpoints for controlled operation in a local workspace."
+    },
+    "expected_flags": {
+      "file_read": true,
+      "file_write": false,
+      "network_access": false,
+      "shell_exec": false,
+      "secrets_access": false,
+      "external_download": false,
+      "app_access": false,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "LOW"
+  },
+  {
+    "id": "case_write_local_changes",
+    "title": "Local file writer",
+    "text": "This automation can write file outputs, create file snapshots, and rename file artifacts during a guided maintenance flow. The usage notes explain setup, validation, review steps, expected outputs, approval checkpoints, rollback handling, and operational boundaries in enough detail for a reviewer to understand the workflow safely.",
+    "metadata_context": {
+      "description": "Comprehensive maintenance workflow notes with validation and rollback guidance.",
+      "readme": "Expanded operating notes with examples, approval steps, and clear boundaries for local maintenance usage."
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": true,
+      "network_access": false,
+      "shell_exec": false,
+      "secrets_access": false,
+      "external_download": false,
+      "app_access": false,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "MEDIUM"
+  },
+  {
+    "id": "case_network_only",
+    "title": "Outbound API caller",
+    "text": "This integration can send request payloads to an external api and call api endpoints for status checks during a documented workflow. The material also explains setup, review checkpoints, expected outputs, validation tasks, approval flow, operator boundaries, and recovery notes so the reviewer can assess behavior with confidence.",
+    "metadata_context": {
+      "description": "Documented integration workflow with validation, approval, and recovery guidance.",
+      "readme": "Detailed usage notes describing examples, expected outputs, operator review steps, and implementation boundaries."
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": false,
+      "network_access": true,
+      "shell_exec": false,
+      "secrets_access": false,
+      "external_download": false,
+      "app_access": false,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "LOW"
+  },
+  {
+    "id": "case_shell_network_download",
+    "title": "Installer with shell and network",
+    "text": "This automation can run command steps, use powershell for setup, download file assets, and call api services during a guided install sequence. The supporting notes explain approval checkpoints, validation tasks, expected outputs, review flow, rollback handling, and operator safeguards so the reviewer can understand the documented behavior clearly.",
+    "metadata_context": {
+      "description": "Detailed install workflow with validation, rollback, and operator safeguards.",
+      "readme": "Expanded operating guidance including setup examples, review checkpoints, expected outputs, and maintenance boundaries."
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": false,
+      "network_access": true,
+      "shell_exec": true,
+      "secrets_access": false,
+      "external_download": true,
+      "app_access": false,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "CRITICAL"
+  },
+  {
+    "id": "case_secrets_only",
+    "title": "Secret-aware integration",
+    "text": "This workflow uses an api key loaded from an environment variable and passes a bearer token to a trusted service as part of a documented approval sequence. The notes cover setup, validation tasks, review checkpoints, expected outputs, operator boundaries, and fallback handling to make the behavior understandable for manual review.",
+    "metadata_context": {
+      "description": "Long-form approval sequence with clear review and fallback handling.",
+      "readme": "Detailed guidance with examples, setup notes, validation steps, and explicit operating boundaries."
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": false,
+      "network_access": false,
+      "shell_exec": false,
+      "secrets_access": true,
+      "external_download": false,
+      "app_access": false,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "MEDIUM"
+  },
+  {
+    "id": "case_app_access_only",
+    "title": "Workspace app connector",
+    "text": "This connector can read from slack channels and notion pages to build a reviewer-facing digest during a documented coordination flow. The guide explains setup, validation tasks, expected outputs, approval checkpoints, operational boundaries, and support notes so that a reviewer has enough context to assess the integration safely.",
+    "metadata_context": {
+      "description": "Detailed coordination workflow with approval checkpoints and support notes.",
+      "readme": "Expanded examples, expected outputs, validation notes, and operating boundaries for workspace coordination usage."
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": false,
+      "network_access": false,
+      "shell_exec": false,
+      "secrets_access": false,
+      "external_download": false,
+      "app_access": true,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "MEDIUM"
+  },
+  {
+    "id": "case_unclear_docs_only",
+    "title": "Vague short description",
+    "text": "Helpful assistant for general tasks.",
+    "metadata_context": {
+      "description": "",
+      "readme": ""
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": false,
+      "network_access": false,
+      "shell_exec": false,
+      "secrets_access": false,
+      "external_download": false,
+      "app_access": false,
+      "unclear_docs": true
+    },
+    "expected_risk_level": "LOW"
+  },
+  {
+    "id": "case_write_network_secrets",
+    "title": "Sync tool with secrets and writes",
+    "text": "This utility can write file outputs, send request data to an external api, and use an api key stored in an environment variable during a documented sync process. The guide explains setup, validation tasks, approval checkpoints, expected outputs, rollback handling, and operator boundaries in enough detail for safe manual review.",
+    "metadata_context": {
+      "description": "Detailed sync workflow with approval and rollback guidance.",
+      "readme": "Expanded documentation with setup notes, validation examples, expected outputs, and clear boundaries."
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": true,
+      "network_access": true,
+      "shell_exec": false,
+      "secrets_access": true,
+      "external_download": false,
+      "app_access": false,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "CRITICAL"
+  },
+  {
+    "id": "case_download_only",
+    "title": "Package retriever",
+    "text": "This helper can download binary packages during a documented preparation flow and then present a review summary to the operator. The usage notes explain setup, expected outputs, validation tasks, approval checkpoints, rollback steps, and operating boundaries so the reviewer can assess the helper with confidence.",
+    "metadata_context": {
+      "description": "Long-form preparation workflow with validation and rollback notes.",
+      "readme": "Detailed usage guidance with examples, expected outputs, approval checkpoints, and operating boundaries."
+    },
+    "expected_flags": {
+      "file_read": false,
+      "file_write": false,
+      "network_access": false,
+      "shell_exec": false,
+      "secrets_access": false,
+      "external_download": true,
+      "app_access": false,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "MEDIUM"
+  },
+  {
+    "id": "case_multi_app_and_read",
+    "title": "Workspace summarizer",
+    "text": "This assistant can read files from a project workspace and collect updates from calendar entries before preparing a reviewer-ready summary. The operating guide explains setup, approval checkpoints, expected outputs, validation flow, rollback handling, and usage boundaries in enough detail for confident review.",
+    "metadata_context": {
+      "description": "Detailed summarization workflow with approval and rollback notes.",
+      "readme": "Expanded examples, validation guidance, expected outputs, and operating boundaries for the summarization workflow."
+    },
+    "expected_flags": {
+      "file_read": true,
+      "file_write": false,
+      "network_access": false,
+      "shell_exec": false,
+      "secrets_access": false,
+      "external_download": false,
+      "app_access": true,
+      "unclear_docs": false
+    },
+    "expected_risk_level": "MEDIUM"
+  }
+]

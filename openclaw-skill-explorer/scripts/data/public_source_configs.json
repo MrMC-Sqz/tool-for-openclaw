@@ -1,0 +1,23 @@
+[
+  {
+    "name": "GitHub Public Automation Skills",
+    "type": "github_search",
+    "query": "\"automation assistant\" language:python stars:>50",
+    "category": "automation",
+    "tag_hints": ["automation", "public", "github"],
+    "max_results": 12
+  },
+  {
+    "name": "GitHub Public Slack Skills",
+    "type": "github_search",
+    "query": "\"slack bot\" language:python stars:>50",
+    "category": "operations",
+    "tag_hints": ["slack", "public", "github"],
+    "max_results": 12
+  },
+  {
+    "name": "OpenClaw Public Generated Catalog",
+    "type": "generated_catalog",
+    "count": 120
+  }
+]

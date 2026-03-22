@@ -64,6 +64,73 @@ class SkillReviewListResponse(BaseModel):
     items: list[SkillReviewOut]
 
 
+class SkillFeedbackCreateRequest(BaseModel):
+    reporter: str = "system"
+    feedback_type: str
+    severity: str = "medium"
+    status: str = "open"
+    expected_risk_level: str | None = None
+    actual_risk_level: str | None = None
+    comment: str | None = None
+    risk_report_id: int | None = None
+
+
+class SkillFeedbackOut(BaseModel):
+    id: int
+    reporter: str
+    feedback_type: str
+    severity: str
+    status: str
+    expected_risk_level: str | None
+    actual_risk_level: str | None
+    comment: str | None
+    risk_report_id: int | None
+    created_at: datetime
+
+
+class SkillFeedbackListResponse(BaseModel):
+    items: list[SkillFeedbackOut]
+
+
+class FeedbackBacklogItemOut(BaseModel):
+    feedback_type: str
+    count: int
+    severity_score: int
+    priority_score: int
+
+
+class FeedbackSummaryResponse(BaseModel):
+    total_feedback: int
+    by_type: dict[str, int]
+    by_severity: dict[str, int]
+    prioritized_items: list[FeedbackBacklogItemOut]
+    recent_items: list[SkillFeedbackOut]
+
+
+class PolicyChangeLogCreateRequest(BaseModel):
+    policy_version: str
+    title: str
+    change_type: str
+    summary: str
+    author: str = "system"
+    related_feedback_count: int = 0
+
+
+class PolicyChangeLogOut(BaseModel):
+    id: int
+    policy_version: str
+    title: str
+    change_type: str
+    summary: str
+    author: str
+    related_feedback_count: int
+    published_at: datetime
+
+
+class PolicyChangeLogListResponse(BaseModel):
+    items: list[PolicyChangeLogOut]
+
+
 class SkillAuditLogOut(BaseModel):
     id: int
     action_type: str

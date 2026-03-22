@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.risk_report import RiskReport
 from app.models.skill import Skill
 from app.models.source import Source
+from app.models.tag import Tag
 from app.services.review_service import get_latest_skill_review, get_skill_review_state
 from app.services.summarizer import summarize_readme
 
@@ -30,16 +31,27 @@ class SearchSkillsResult(TypedDict):
     latest_reviewers: dict[int, str | None]
 
 
-def get_or_create_curated_source(db: Session) -> Source:
-    source = db.query(Source).filter(Source.name == "OpenClaw Curated Seed").first()
+def get_or_create_source(
+    db: Session,
+    *,
+    name: str,
+    source_type: str,
+    base_url: str | None = None,
+    is_active: int = 1,
+) -> Source:
+    source = db.query(Source).filter(Source.name == name).first()
     if source:
+        source.type = source_type
+        source.base_url = base_url
+        source.is_active = is_active
+        db.flush()
         return source
 
     source = Source(
-        name="OpenClaw Curated Seed",
-        type="curated_list",
-        base_url="local://scripts/data/skills_seed.json",
-        is_active=1,
+        name=name,
+        type=source_type,
+        base_url=base_url,
+        is_active=is_active,
         sync_status="idle",
     )
     db.add(source)
@@ -47,7 +59,18 @@ def get_or_create_curated_source(db: Session) -> Source:
     return source
 
 
+def get_or_create_curated_source(db: Session) -> Source:
+    return get_or_create_source(
+        db,
+        name="OpenClaw Curated Seed",
+        source_type="curated_list",
+        base_url="local://scripts/data/skills_seed.json",
+        is_active=1,
+    )
+
+
 def upsert_skill(db: Session, normalized_data: dict, source_id: int | None = None) -> tuple[Skill, str]:
+    tag_names = list(normalized_data.pop("tags", []))
     filters = [Skill.slug == normalized_data["slug"]]
     repo_url = normalized_data.get("repo_url")
     if repo_url:
@@ -66,6 +89,23 @@ def upsert_skill(db: Session, normalized_data: dict, source_id: int | None = Non
     if source_id is not None:
         skill.source_id = source_id
     skill.updated_at = datetime.utcnow()
+
+    if tag_names or skill.tags:
+        existing_tags = {
+            tag.name.lower(): tag
+            for tag in db.query(Tag).filter(Tag.name.in_(tag_names)).all()
+            if tag.name
+        }
+        skill.tags.clear()
+        for tag_name in tag_names:
+            tag = existing_tags.get(tag_name)
+            if not tag:
+                tag = Tag(name=tag_name)
+                db.add(tag)
+                db.flush()
+                existing_tags[tag_name] = tag
+            skill.tags.append(tag)
+
     db.flush()
     return skill, action
 

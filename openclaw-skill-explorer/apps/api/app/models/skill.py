@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.models.skill_feedback import SkillFeedback
     from app.models.skill_audit_log import SkillAuditLog
     from app.models.skill_review import SkillReview
     from app.models.risk_report import RiskReport
@@ -57,6 +58,9 @@ class Skill(Base):
     tags: Mapped[list["Tag"]] = relationship("Tag", secondary="skill_tags", back_populates="skills")
     reviews: Mapped[list["SkillReview"]] = relationship(
         "SkillReview", back_populates="skill", cascade="all, delete-orphan"
+    )
+    feedback_items: Mapped[list["SkillFeedback"]] = relationship(
+        "SkillFeedback", back_populates="skill", cascade="all, delete-orphan"
     )
     audit_logs: Mapped[list["SkillAuditLog"]] = relationship(
         "SkillAuditLog", back_populates="skill", cascade="all, delete-orphan"

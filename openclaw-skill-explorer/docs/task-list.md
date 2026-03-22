@@ -67,11 +67,11 @@
 ## Phase 6 - Continuous Quality
 
 ### P6.1 Risk Quality Benchmarking
-- [ ] Build labeled evaluation dataset.
-- [ ] Track false positive/false negative trends per release.
-- [ ] Add regression tests for risk rules.
+- [x] Build labeled evaluation dataset.
+- [x] Track false positive/false negative trends per release.
+- [x] Add regression tests for risk rules.
 
 ### P6.2 Product Feedback Loop
-- [ ] Capture user feedback on incorrect risk outcomes.
-- [ ] Prioritize weekly rule-tuning updates.
-- [ ] Publish changelog for policy updates.
+- [x] Capture user feedback on incorrect risk outcomes.
+- [x] Prioritize weekly rule-tuning updates.
+- [x] Publish changelog for policy updates.

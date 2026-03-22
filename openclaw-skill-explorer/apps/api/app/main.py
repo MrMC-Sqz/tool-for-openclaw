@@ -9,6 +9,7 @@ from app.db.init_db import init_db
 from app.routes.health import router as health_router
 from app.routes.scan import router as scan_router
 from app.routes.skills import router as skills_router
+from app.routes.sources import router as sources_router
 
 app = FastAPI(title=settings.app_name)
 app.add_middleware(
@@ -19,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(health_router)
+app.include_router(sources_router)
 app.include_router(skills_router)
 app.include_router(scan_router)
 

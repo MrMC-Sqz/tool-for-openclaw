@@ -1,0 +1,372 @@
+{
+  "generated_at": "2026-03-22T03:05:10+00:00",
+  "policy_version": "v1.0.0",
+  "dataset_path": "G:\\demo\\codx_task\\openclaw-skill-explorer\\scripts\\data\\risk_eval_dataset.json",
+  "total_cases": 10,
+  "aggregate": {
+    "exact_flag_matches": 10,
+    "exact_flag_match_rate": 1.0,
+    "exact_risk_level_matches": 10,
+    "exact_risk_level_match_rate": 1.0,
+    "false_positive_total": 0,
+    "false_negative_total": 0
+  },
+  "per_capability": {
+    "file_read": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 8,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "file_write": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 8,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "network_access": {
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "tn": 7,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "shell_exec": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "tn": 9,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "secrets_access": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 8,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "external_download": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 8,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "app_access": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 8,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "unclear_docs": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "tn": 9,
+      "precision": 1.0,
+      "recall": 1.0
+    }
+  },
+  "cases": [
+    {
+      "id": "case_read_only_local",
+      "title": "Read-only local helper",
+      "expected_risk_level": "LOW",
+      "predicted_risk_level": "LOW",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": true,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": true,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 10
+    },
+    {
+      "id": "case_write_local_changes",
+      "title": "Local file writer",
+      "expected_risk_level": "MEDIUM",
+      "predicted_risk_level": "MEDIUM",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": true,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": true,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 25
+    },
+    {
+      "id": "case_network_only",
+      "title": "Outbound API caller",
+      "expected_risk_level": "LOW",
+      "predicted_risk_level": "LOW",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": true,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": true,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 15
+    },
+    {
+      "id": "case_shell_network_download",
+      "title": "Installer with shell and network",
+      "expected_risk_level": "CRITICAL",
+      "predicted_risk_level": "CRITICAL",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": true,
+        "shell_exec": true,
+        "secrets_access": false,
+        "external_download": true,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": true,
+        "shell_exec": true,
+        "secrets_access": false,
+        "external_download": true,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 70
+    },
+    {
+      "id": "case_secrets_only",
+      "title": "Secret-aware integration",
+      "expected_risk_level": "MEDIUM",
+      "predicted_risk_level": "MEDIUM",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": true,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": true,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 30
+    },
+    {
+      "id": "case_app_access_only",
+      "title": "Workspace app connector",
+      "expected_risk_level": "MEDIUM",
+      "predicted_risk_level": "MEDIUM",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": true,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": true,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 20
+    },
+    {
+      "id": "case_unclear_docs_only",
+      "title": "Vague short description",
+      "expected_risk_level": "LOW",
+      "predicted_risk_level": "LOW",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": true
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": true
+      },
+      "mismatched_flags": [],
+      "risk_score": 10
+    },
+    {
+      "id": "case_write_network_secrets",
+      "title": "Sync tool with secrets and writes",
+      "expected_risk_level": "CRITICAL",
+      "predicted_risk_level": "CRITICAL",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": true,
+        "network_access": true,
+        "shell_exec": false,
+        "secrets_access": true,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": true,
+        "network_access": true,
+        "shell_exec": false,
+        "secrets_access": true,
+        "external_download": false,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 70
+    },
+    {
+      "id": "case_download_only",
+      "title": "Package retriever",
+      "expected_risk_level": "MEDIUM",
+      "predicted_risk_level": "MEDIUM",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": true,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": false,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": true,
+        "app_access": false,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 20
+    },
+    {
+      "id": "case_multi_app_and_read",
+      "title": "Workspace summarizer",
+      "expected_risk_level": "MEDIUM",
+      "predicted_risk_level": "MEDIUM",
+      "risk_level_match": true,
+      "expected_flags": {
+        "file_read": true,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": true,
+        "unclear_docs": false
+      },
+      "predicted_flags": {
+        "file_read": true,
+        "file_write": false,
+        "network_access": false,
+        "shell_exec": false,
+        "secrets_access": false,
+        "external_download": false,
+        "app_access": true,
+        "unclear_docs": false
+      },
+      "mismatched_flags": [],
+      "risk_score": 30
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "install_methods": ["registry", "git", "marketplace"],
+  "categories": [
+    {
+      "name": "Sales",
+      "slug": "sales",
+      "description_prefix": "Supports revenue teams by coordinating follow-up, account planning, and forecasting work.",
+      "tags": ["crm", "pipeline", "accounts"],
+      "channels": ["slack", "email", "crm"],
+      "artifacts": ["notes", "files", "summaries"]
+    },
+    {
+      "name": "Support",
+      "slug": "support",
+      "description_prefix": "Helps support teams route urgent cases, summarize customer context, and maintain response quality.",
+      "tags": ["tickets", "triage", "handoff"],
+      "channels": ["slack", "email", "ticketing"],
+      "artifacts": ["attachments", "files", "summaries"]
+    },
+    {
+      "name": "Security",
+      "slug": "security",
+      "description_prefix": "Assists security teams with evidence gathering, access review, and incident response workflows.",
+      "tags": ["governance", "audit", "alerts"],
+      "channels": ["siem", "slack", "email"],
+      "artifacts": ["logs", "files", "evidence"]
+    },
+    {
+      "name": "Data",
+      "slug": "data",
+      "description_prefix": "Enables data teams to validate inputs, map schemas, and automate quality checks.",
+      "tags": ["schemas", "quality", "pipelines"],
+      "channels": ["warehouse", "notion", "slack"],
+      "artifacts": ["files", "tables", "reports"]
+    },
+    {
+      "name": "DevOps",
+      "slug": "devops",
+      "description_prefix": "Improves release, infrastructure, and runbook workflows for platform teams.",
+      "tags": ["release", "runbook", "infrastructure"],
+      "channels": ["slack", "github", "pager"],
+      "artifacts": ["configs", "files", "checklists"]
+    },
+    {
+      "name": "Finance",
+      "slug": "finance",
+      "description_prefix": "Streamlines finance approvals, reconciliations, and planning operations.",
+      "tags": ["approvals", "reconciliation", "planning"],
+      "channels": ["slack", "email", "erp"],
+      "artifacts": ["invoices", "files", "forecasts"]
+    },
+    {
+      "name": "HR",
+      "slug": "hr",
+      "description_prefix": "Supports onboarding, policy search, and internal people operations workflows.",
+      "tags": ["onboarding", "policy", "people-ops"],
+      "channels": ["email", "slack", "calendar"],
+      "artifacts": ["files", "checklists", "notes"]
+    },
+    {
+      "name": "Research",
+      "slug": "research",
+      "description_prefix": "Helps research teams gather sources, organize findings, and prepare evidence-backed summaries.",
+      "tags": ["sources", "evidence", "briefs"],
+      "channels": ["browser", "notion", "slack"],
+      "artifacts": ["notes", "files", "briefs"]
+    },
+    {
+      "name": "Knowledge",
+      "slug": "knowledge",
+      "description_prefix": "Organizes workspace knowledge, documentation updates, and retrieval workflows.",
+      "tags": ["docs", "retrieval", "indexing"],
+      "channels": ["notion", "slack", "drive"],
+      "artifacts": ["files", "pages", "indexes"]
+    },
+    {
+      "name": "QA",
+      "slug": "qa",
+      "description_prefix": "Coordinates release validation, regression planning, and defect triage for quality teams.",
+      "tags": ["testing", "regression", "release"],
+      "channels": ["slack", "jira", "email"],
+      "artifacts": ["files", "plans", "checklists"]
+    }
+  ],
+  "roles": [
+    {
+      "name": "Automation Planner",
+      "slug": "automation-planner",
+      "focus": "planning repeatable automation sequences",
+      "tags": ["automation", "planning", "orchestration"]
+    },
+    {
+      "name": "Slack Router",
+      "slug": "slack-router",
+      "focus": "routing requests and updates from Slack conversations",
+      "tags": ["slack", "routing", "coordination"]
+    },
+    {
+      "name": "File Analyst",
+      "slug": "file-analyst",
+      "focus": "reading and interpreting file-based inputs",
+      "tags": ["file", "analysis", "documents"]
+    },
+    {
+      "name": "Sync Operator",
+      "slug": "sync-operator",
+      "focus": "keeping records synchronized across connected tools",
+      "tags": ["sync", "operations", "records"]
+    },
+    {
+      "name": "Review Assistant",
+      "slug": "review-assistant",
+      "focus": "preparing reviewer-ready summaries and decision support",
+      "tags": ["review", "summaries", "guidance"]
+    },
+    {
+      "name": "Workflow Orchestrator",
+      "slug": "workflow-orchestrator",
+      "focus": "coordinating multi-step workflows across teams and systems",
+      "tags": ["workflow", "automation", "handoff"]
+    },
+    {
+      "name": "Compliance Checker",
+      "slug": "compliance-checker",
+      "focus": "checking records against policy and compliance requirements",
+      "tags": ["compliance", "policy", "checks"]
+    },
+    {
+      "name": "Knowledge Mapper",
+      "slug": "knowledge-mapper",
+      "focus": "organizing knowledge assets and linking context across documents",
+      "tags": ["knowledge", "mapping", "organization"]
+    },
+    {
+      "name": "Alert Summarizer",
+      "slug": "alert-summarizer",
+      "focus": "condensing alerts and operational events into clear summaries",
+      "tags": ["alerts", "summaries", "operations"]
+    },
+    {
+      "name": "Intake Coordinator",
+      "slug": "intake-coordinator",
+      "focus": "managing inbound requests, files, and approval-ready packets",
+      "tags": ["intake", "requests", "approvals"]
+    }
+  ]
+}
