@@ -27,6 +27,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <Link href="/skills" className="text-slate-700 hover:text-slate-900">
                   Skills
                 </Link>
+                <Link href="/sources" className="text-slate-700 hover:text-slate-900">
+                  Sources
+                </Link>
                 <Link href="/scan" className="text-slate-700 hover:text-slate-900">
                   Manual Scan
                 </Link>

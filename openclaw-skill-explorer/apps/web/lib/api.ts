@@ -70,6 +70,22 @@ export type SimilarSkillsResponse = {
   items: SkillListItem[];
 };
 
+export type SourceListItem = {
+  id: number;
+  name: string;
+  type: string;
+  base_url: string | null;
+  is_active: number;
+  sync_status: string;
+  last_synced_at: string | null;
+  updated_at: string | null;
+  skill_count: number;
+};
+
+export type SourcesListResponse = {
+  items: SourceListItem[];
+};
+
 function buildUrl(path: string, params?: Record<string, string | number | undefined>) {
   if (!appConfig.apiBaseUrl) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.");
@@ -129,4 +145,9 @@ export async function scanText(text: string, type: "readme" | "manifest"): Promi
     method: "POST",
     body: JSON.stringify({ text }),
   });
+}
+
+export async function getSources(): Promise<SourcesListResponse> {
+  const url = buildUrl("/api/sources");
+  return request<SourcesListResponse>(url);
 }

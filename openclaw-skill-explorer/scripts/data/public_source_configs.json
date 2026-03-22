@@ -2,18 +2,80 @@
   {
     "name": "GitHub Public Automation Skills",
     "type": "github_search",
-    "query": "\"automation assistant\" language:python stars:>50",
+    "queries": [
+      "\"automation assistant\" stars:>20 archived:false",
+      "\"workflow automation\" stars:>20 archived:false",
+      "\"task automation\" stars:>20 archived:false"
+    ],
     "category": "automation",
     "tag_hints": ["automation", "public", "github"],
-    "max_results": 12
+    "max_results": 18,
+    "max_results_per_query": 8
   },
   {
     "name": "GitHub Public Slack Skills",
     "type": "github_search",
-    "query": "\"slack bot\" language:python stars:>50",
+    "queries": [
+      "\"slack bot\" stars:>20 archived:false",
+      "\"slack automation\" stars:>20 archived:false",
+      "\"slack assistant\" stars:>10 archived:false"
+    ],
     "category": "operations",
     "tag_hints": ["slack", "public", "github"],
-    "max_results": 12
+    "max_results": 18,
+    "max_results_per_query": 8
+  },
+  {
+    "name": "GitHub Public Data Workflow Skills",
+    "type": "github_search",
+    "queries": [
+      "\"data pipeline\" stars:>20 archived:false",
+      "\"etl automation\" stars:>10 archived:false",
+      "\"data sync\" stars:>20 archived:false"
+    ],
+    "category": "data",
+    "tag_hints": ["data", "workflow", "public", "github"],
+    "max_results": 18,
+    "max_results_per_query": 8
+  },
+  {
+    "name": "GitHub Public Security Operations Skills",
+    "type": "github_search",
+    "queries": [
+      "\"security automation\" stars:>20 archived:false",
+      "\"incident response\" stars:>20 archived:false",
+      "\"threat hunting\" stars:>10 archived:false"
+    ],
+    "category": "security",
+    "tag_hints": ["security", "operations", "public", "github"],
+    "max_results": 18,
+    "max_results_per_query": 8
+  },
+  {
+    "name": "GitHub Public Documentation Skills",
+    "type": "github_search",
+    "queries": [
+      "\"documentation assistant\" stars:>10 archived:false",
+      "\"knowledge base\" stars:>20 archived:false",
+      "\"docs generator\" stars:>10 archived:false"
+    ],
+    "category": "documentation",
+    "tag_hints": ["docs", "knowledge", "public", "github"],
+    "max_results": 18,
+    "max_results_per_query": 8
+  },
+  {
+    "name": "GitHub Public Support Skills",
+    "type": "github_search",
+    "queries": [
+      "\"support bot\" stars:>10 archived:false",
+      "\"customer support\" stars:>20 archived:false",
+      "\"helpdesk automation\" stars:>10 archived:false"
+    ],
+    "category": "support",
+    "tag_hints": ["support", "service", "public", "github"],
+    "max_results": 18,
+    "max_results_per_query": 8
   },
   {
     "name": "OpenClaw Public Generated Catalog",

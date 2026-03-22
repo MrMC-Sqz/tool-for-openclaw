@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-03-22T04:26:49+00:00",
+  "status": "success",
+  "source_name": "OpenClaw Curated Seed",
+  "stats": {
+    "source_files": 9,
+    "total_raw": 241,
+    "invalid_items": 0,
+    "duplicate_items": 0,
+    "total_processed": 241,
+    "inserted": 91,
+    "updated": 150,
+    "failed": 0,
+    "failed_validation": 0,
+    "failed_db": 0,
+    "failed_unexpected": 0
+  },
+  "health": {
+    "success_rate": 100.0,
+    "duplicate_rate": 0.0,
+    "invalid_rate": 0.0
+  }
+}

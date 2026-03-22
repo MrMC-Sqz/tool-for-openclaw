@@ -35,37 +35,52 @@ def fetch_source_items(source_config: dict) -> list[dict]:
 
 
 def _fetch_github_search_items(source_config: dict) -> list[dict]:
-    query = str(source_config.get("query") or "").strip()
-    if not query:
+    configured_queries = source_config.get("queries")
+    queries: list[str]
+    if isinstance(configured_queries, list):
+        queries = [str(query).strip() for query in configured_queries if str(query).strip()]
+    else:
+        single_query = str(source_config.get("query") or "").strip()
+        queries = [single_query] if single_query else []
+
+    if not queries:
         return []
     category = str(source_config.get("category") or "").strip().lower() or None
     tag_hints = [str(tag).strip().lower() for tag in source_config.get("tag_hints", []) if str(tag).strip()]
     max_results = max(1, min(60, int(source_config.get("max_results") or 20)))
+    max_results_per_query = max(1, min(30, int(source_config.get("max_results_per_query") or max_results)))
 
     items = []
-    for repo in search_repositories(query, max_results=max_results):
-        tags = []
-        for tag in [*tag_hints, category, repo.repo_owner, repo.repo_name]:
-            normalized = str(tag or "").strip().lower()
-            if normalized and normalized not in tags:
-                tags.append(normalized)
+    seen_repo_urls: set[str] = set()
+    for query in queries:
+        for repo in search_repositories(query, max_results=max_results_per_query):
+            if repo.repo_url in seen_repo_urls:
+                continue
+            seen_repo_urls.add(repo.repo_url)
+            tags = []
+            for tag in [*tag_hints, category, repo.repo_owner, repo.repo_name]:
+                normalized = str(tag or "").strip().lower()
+                if normalized and normalized not in tags:
+                    tags.append(normalized)
 
-        items.append(
-            {
-                "name": repo.name or repo.repo_name or "Unnamed Public Skill",
-                "repo_url": repo.repo_url,
-                "category": category,
-                "description": repo.description or f"Public repository discovered for query: {query}",
-                "readme_summary": repo.description or f"Public GitHub repository matched for query: {query}",
-                "tags": tags,
-                "stars": repo.stars,
-                "last_repo_updated_at": repo.updated_at,
-                "author": repo.repo_owner,
-                "install_method": "git",
-                "source_url": "https://api.github.com/search/repositories",
-                "offline_only": True,
-            }
-        )
+            items.append(
+                {
+                    "name": repo.name or repo.repo_name or "Unnamed Public Skill",
+                    "repo_url": repo.repo_url,
+                    "category": category,
+                    "description": repo.description or f"Public repository discovered for query: {query}",
+                    "readme_summary": repo.description or f"Public GitHub repository matched for query: {query}",
+                    "tags": tags,
+                    "stars": repo.stars,
+                    "last_repo_updated_at": repo.updated_at,
+                    "author": repo.repo_owner,
+                    "install_method": "git",
+                    "source_url": "https://api.github.com/search/repositories",
+                    "offline_only": True,
+                }
+            )
+            if len(items) >= max_results:
+                return items
     return items
 
 

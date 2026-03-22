@@ -8,8 +8,10 @@ class SourceListItem(BaseModel):
     name: str
     type: str
     base_url: str | None
+    is_active: int
     sync_status: str
     last_synced_at: datetime | None
+    updated_at: datetime | None
     skill_count: int
 
 

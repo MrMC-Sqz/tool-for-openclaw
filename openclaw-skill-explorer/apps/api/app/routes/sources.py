@@ -21,7 +21,7 @@ def list_sources(db: Session = Depends(get_db)) -> SourceListResponse:
         db.query(Source, func.count(Skill.id))
         .outerjoin(Skill, Skill.source_id == Source.id)
         .group_by(Source.id)
-        .order_by(Source.name.asc())
+        .order_by(func.count(Skill.id).desc(), Source.last_synced_at.desc(), Source.name.asc())
         .all()
     )
     return SourceListResponse(
@@ -31,8 +31,10 @@ def list_sources(db: Session = Depends(get_db)) -> SourceListResponse:
                 name=source.name,
                 type=source.type,
                 base_url=source.base_url,
+                is_active=source.is_active,
                 sync_status=source.sync_status,
                 last_synced_at=source.last_synced_at,
+                updated_at=source.updated_at,
                 skill_count=int(skill_count or 0),
             )
             for source, skill_count in rows

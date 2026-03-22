@@ -262,6 +262,7 @@ def sync_once(
     source = get_or_create_curated_source(db)
     source.sync_status = "running"
     db.flush()
+    curated_failed = 0
 
     for item in seed_result["items"]:
         stats["total_processed"] += 1
@@ -279,6 +280,7 @@ def sync_once(
                 stats["updated"] += 1
         except Exception as exc:  # noqa: BLE001
             stats["failed"] += 1
+            curated_failed += 1
             category = classify_error(exc)
             if category == "validation":
                 stats["failed_validation"] += 1
@@ -288,7 +290,7 @@ def sync_once(
                 stats["failed_unexpected"] += 1
 
     source.last_synced_at = datetime.utcnow()
-    source.sync_status = "partial" if stats["failed"] > 0 else "success"
+    source.sync_status = "partial" if curated_failed > 0 else "success"
     db.flush()
 
     for batch in external_source_batches:
@@ -301,6 +303,7 @@ def sync_once(
         )
         batch_source.sync_status = "running"
         db.flush()
+        batch_failed = 0
 
         for item in batch["items"]:
             stats["total_raw"] += 1
@@ -319,6 +322,7 @@ def sync_once(
                     stats["updated"] += 1
             except Exception as exc:  # noqa: BLE001
                 stats["failed"] += 1
+                batch_failed += 1
                 category = classify_error(exc)
                 if category == "validation":
                     stats["failed_validation"] += 1
@@ -328,7 +332,7 @@ def sync_once(
                     stats["failed_unexpected"] += 1
 
         batch_source.last_synced_at = datetime.utcnow()
-        batch_source.sync_status = "partial" if stats["failed"] > 0 else "success"
+        batch_source.sync_status = "partial" if batch_failed > 0 else "success"
         db.flush()
 
     overall_status = "partial" if stats["failed"] > 0 else "success"
